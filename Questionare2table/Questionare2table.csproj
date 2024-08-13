@@ -5,7 +5,20 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Authors>Mengqiu Liu</Authors>
+    <PackageProjectUrl>https://github.com/AaronZSAM101/Questionare2table</PackageProjectUrl>
+    <Copyright>©Copyright Mengqiu Liu, All rights reserved.</Copyright>
+    <Description>A tools for converting questionare data to table from wjx.cn.</Description>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="EPPlus" Version="7.2.2" />
