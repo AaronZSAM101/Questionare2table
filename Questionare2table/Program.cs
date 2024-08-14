@@ -63,19 +63,26 @@ class Program
         int colCount = worksheet.Dimension.Columns;
 
         var dt = new DataTable();
-        for (int col = 9; col <= colCount; col++)  // 跳过前8列
+        for (int col = 1; col <= colCount; col++)
         {
-            dt.Columns.Add($"Column{col}");
+            if (!columnsToDelete.Contains(col))
+            {
+                dt.Columns.Add($"Column{col}");
+            }
         }
 
         for (int row = 1; row <= rowCount; row++)
         {
             var dataRow = dt.NewRow();
-            for (int col = 9; col <= colCount; col++)  // 跳过前8列
+            int dataColumnIndex = 0;
+            for (int col = 1; col <= colCount; col++)
             {
-                string cellValue = worksheet.Cells[row, col].Text;
-                cellValue = System.Text.RegularExpressions.Regex.Replace(cellValue, @".*—", "");
-                dataRow[col - 9] = cellValue;
+                if (!columnsToDelete.Contains(col))
+                {
+                    string cellValue = worksheet.Cells[row, col].Text;
+                    cellValue = System.Text.RegularExpressions.Regex.Replace(cellValue, @".*—", "");
+                    dataRow[dataColumnIndex++] = cellValue;
+                }
             }
             dt.Rows.Add(dataRow);
         }
