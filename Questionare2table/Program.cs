@@ -1,5 +1,6 @@
 ﻿using OfficeOpenXml;
 using System.Data;
+using System.Text.Json;
 
 class Program
 {
@@ -11,8 +12,9 @@ class Program
             return;
         }
 
-        // 获取文件路径
+        var config = LoadConfig();
         var filePaths = GetFilePaths(args);
+
         if (filePaths.ExcelFilePath == null || filePaths.NameListFilePath == null)
         {
             Console.WriteLine("请确保拖放了正确的Excel文件和namelist.txt文件.");
@@ -21,10 +23,25 @@ class Program
 
         try
         {
+            List<int> columnsToDelete;
+            if (string.IsNullOrEmpty(config.ColumnsToDelete))
+            {
+                Console.WriteLine("请输入要删除的列，以逗号分隔 (例如: A,B,C):");
+                var columnsToDeleteInput = Console.ReadLine();
+                columnsToDelete = ParseColumns(columnsToDeleteInput);
+                config.ColumnsToDelete = columnsToDeleteInput;
+                SaveConfig(config);
+            }
+            else
+            {
+                Console.WriteLine($"使用上次的配置，删除以下列: {config.ColumnsToDelete}");
+                columnsToDelete = ParseColumns(config.ColumnsToDelete);
+            }
+
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             using var package = new ExcelPackage(new FileInfo(filePaths.ExcelFilePath));
             var worksheet = package.Workbook.Worksheets[0];
-            var dataTable = ExtractDataTableFromWorksheet(worksheet);
+            var dataTable = ExtractDataTableFromWorksheet(worksheet, columnsToDelete);
             ProcessDataAndSaveResults(dataTable, filePaths.NameListFilePath, filePaths.ExcelFilePath);
         }
         catch (FileNotFoundException ex)
@@ -35,6 +52,24 @@ class Program
         {
             Console.WriteLine($"处理过程中发生错误: {ex.Message}");
         }
+    }
+
+    private static Config LoadConfig()
+    {
+        var configPath = "config.json";
+        if (!File.Exists(configPath))
+        {
+            return new Config();
+        }
+
+        var configJson = File.ReadAllText(configPath);
+        return JsonSerializer.Deserialize<Config>(configJson);
+    }
+
+    private static void SaveConfig(Config config)
+    {
+        var configJson = JsonSerializer.Serialize(config);
+        File.WriteAllText("config.json", configJson);
     }
 
     private static (string ExcelFilePath, string NameListFilePath) GetFilePaths(string[] args)
@@ -57,7 +92,35 @@ class Program
         return (excelFilePath, nameListFilePath);
     }
 
-    private static DataTable ExtractDataTableFromWorksheet(ExcelWorksheet worksheet)
+    private static List<int> ParseColumns(string columnsToDeleteInput)
+    {
+        var columnsToDelete = new List<int>();
+
+        foreach (var column in columnsToDeleteInput.Split(','))
+        {
+            int columnNumber = GetColumnNumber(column.Trim());
+            columnsToDelete.Add(columnNumber);
+        }
+
+        return columnsToDelete;
+    }
+
+    private static int GetColumnNumber(string columnName)
+    {
+        int columnNumber = 0;
+        int multiplier = 1;
+
+        for (int i = columnName.Length - 1; i >= 0; i--)
+        {
+            char letter = columnName[i];
+            columnNumber += (letter - 'A' + 1) * multiplier;
+            multiplier *= 26;
+        }
+
+        return columnNumber;
+    }
+
+    private static DataTable ExtractDataTableFromWorksheet(ExcelWorksheet worksheet, List<int> columnsToDelete)
     {
         int rowCount = worksheet.Dimension.Rows;
         int colCount = worksheet.Dimension.Columns;
@@ -157,5 +220,9 @@ class Program
 
         outputPackage.Save();
         Console.WriteLine($"结果已保存到 {outputFilePath}");
+    }
+    private class Config
+    {
+        public string ColumnsToDelete { get; set; }
     }
 }
