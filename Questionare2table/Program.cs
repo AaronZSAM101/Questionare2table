@@ -155,32 +155,46 @@ class Program
 
     private static void ProcessDataAndSaveResults(DataTable dataTable, string nameListFilePath, string excelFilePath)
     {
-        var nameList = File.ReadAllLines(nameListFilePath);
-        var names = dataTable.Rows[0].ItemArray.Select(x => x.ToString()).ToList();
-        var scores = dataTable.AsEnumerable().Skip(1).Select(r => r.ItemArray.Select(x => Convert.ToInt32(x)).ToArray()).ToList();
+        var names = dataTable.Rows[0].ItemArray.Skip(1).Select(x => x.ToString()).ToList(); // 第一行的姓名列表，跳过第1列（此列是已删除列之后的“姓名”列）
+
+        var scores = dataTable.AsEnumerable().Skip(1).Select(r => r.ItemArray.Skip(1).Select(x =>
+        {
+            if (int.TryParse(x.ToString(), out int result))
+            {
+                return result;
+            }
+            return 0; // 非数字内容返回0
+        }).ToArray()).ToList();
+
         var uniqueNames = names.Distinct().ToList();
         int numQuestions = scores[0].Length / uniqueNames.Count;
-
         var result = uniqueNames.ToDictionary(name => name, name => new int[numQuestions]);
 
-        foreach (var scoreRow in scores)
+        for (int rowIndex = 0; rowIndex < scores.Count; rowIndex++)
         {
-            var nameCounts = uniqueNames.ToDictionary(name => name, name => 0);
+            var scoreRow = scores[rowIndex];
+            var selfName = dataTable.Rows[rowIndex + 1][0].ToString(); // 获取当前行的姓名 (第1列)
 
-            for (int i = 0; i < names.Count; i++)
+            var nameCountTracker = uniqueNames.ToDictionary(name => name, name => 0);
+
+            for (int colIndex = 0; colIndex < names.Count; colIndex++)
             {
-                var name = names[i];
+                var name = names[colIndex];
+
                 if (result.ContainsKey(name))
                 {
-                    int index = nameCounts[name]++;
-                    result[name][index] += scoreRow[i];
+                    // 检查是否为自评（即当前行的姓名与列名相同），如果是则跳过
+                    if (selfName != name)
+                    {
+                        int index = nameCountTracker[name]++;
+                        result[name][index] += scoreRow[colIndex];
+                    }
                 }
             }
         }
 
         SaveResultsToExcel(result, numQuestions, excelFilePath);
     }
-
     private static void SaveResultsToExcel(Dictionary<string, int[]> result, int numQuestions, string excelFilePath)
     {
         var outputDt = new DataTable();
