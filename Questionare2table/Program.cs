@@ -198,16 +198,16 @@ class Program
     private static void SaveResultsToExcel(Dictionary<string, int[]> result, int numQuestions, string excelFilePath)
     {
         var outputDt = new DataTable();
-        outputDt.Columns.Add("姓名");
+        outputDt.Columns.Add("姓名", typeof(string));
 
         // 为每个问题添加列
         for (int i = 1; i <= numQuestions; i++)
         {
-            outputDt.Columns.Add($"T{i}");
+            outputDt.Columns.Add($"T{i}", typeof(int));
         }
 
         // 添加平均分列
-        outputDt.Columns.Add("平均分");
+        outputDt.Columns.Add("平均分", typeof(double));
 
         // 计算平均分并填充数据表
         int totalParticipants = result.Keys.Count;
@@ -241,12 +241,13 @@ class Program
             outputWorksheet.Cells[1, i + 1].Value = outputDt.Columns[i].ColumnName;
         }
 
-        // 填充Excel内容
+        // 填充Excel内容并确保数值以数值类型存储
         for (int i = 0; i < outputDt.Rows.Count; i++)
         {
             for (int j = 0; j < outputDt.Columns.Count; j++)
             {
-                outputWorksheet.Cells[i + 2, j + 1].Value = outputDt.Rows[i][j];
+                var value = outputDt.Rows[i][j];
+                outputWorksheet.Cells[i + 2, j + 1].Value = value;
             }
         }
 
