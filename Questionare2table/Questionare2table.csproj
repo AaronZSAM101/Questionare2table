@@ -11,8 +11,10 @@
     <Description>A tools for converting questionare data to table from wjx.cn.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
-    <FileVersion>1.0.2.0</FileVersion>
+    <FileVersion>1.0.2.2</FileVersion>
+    <AssemblyVersion>1.0.2.2</AssemblyVersion>
+    <Company>Sanco Connecting Technology Co., Ltd.</Company>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>

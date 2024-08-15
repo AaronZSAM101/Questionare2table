@@ -26,7 +26,7 @@ class Program
             List<int> columnsToDelete;
             if (string.IsNullOrEmpty(config.ColumnsToDelete))
             {
-                Console.WriteLine("请输入要删除的列，以逗号分隔 (例如: A,B,C):");
+                Console.WriteLine("请输入要过滤的列，以逗号分隔 (例如: A,B,C):");
                 var columnsToDeleteInput = Console.ReadLine();
                 columnsToDelete = ParseColumns(columnsToDeleteInput);
                 config.ColumnsToDelete = columnsToDeleteInput;
@@ -126,25 +126,29 @@ class Program
         int colCount = worksheet.Dimension.Columns;
 
         var dt = new DataTable();
-        for (int col = 1; col <= colCount; col++)
+
+        // 建立DataTable列，仅添加需要的列
+        for (int col = 1; col < colCount; col++)  // 从第一列开始，并排除最后一列
         {
-            if (!columnsToDelete.Contains(col))
+            if (!columnsToDelete.Contains(col) && col != colCount)  // 排除指定列和最后一列
             {
                 dt.Columns.Add($"Column{col}");
             }
         }
 
+        // 填充DataTable行
         for (int row = 1; row <= rowCount; row++)
         {
             var dataRow = dt.NewRow();
-            int dataColumnIndex = 0;
-            for (int col = 1; col <= colCount; col++)
+            int dataColIndex = 0;
+            for (int col = 1; col < colCount; col++)  // 从第一列开始，并排除最后一列
             {
-                if (!columnsToDelete.Contains(col))
+                if (!columnsToDelete.Contains(col) && col != colCount)  // 排除指定列和最后一列
                 {
                     string cellValue = worksheet.Cells[row, col].Text;
-                    cellValue = System.Text.RegularExpressions.Regex.Replace(cellValue, @".*—", "");
-                    dataRow[dataColumnIndex++] = cellValue;
+                    cellValue = System.Text.RegularExpressions.Regex.Replace(cellValue, @".*—", "");  // 正则表达式替换
+                    dataRow[dataColIndex] = cellValue;
+                    dataColIndex++;
                 }
             }
             dt.Rows.Add(dataRow);
@@ -152,7 +156,6 @@ class Program
 
         return dt;
     }
-
     private static void ProcessDataAndSaveResults(DataTable dataTable, string nameListFilePath, string excelFilePath)
     {
         var names = dataTable.Rows[0].ItemArray.Skip(1).Select(x => x.ToString()).ToList(); // 第一行的姓名列表，跳过第1列（此列是已删除列之后的“姓名”列）
